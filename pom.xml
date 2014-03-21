@@ -4,7 +4,7 @@
 
 	<groupId>org.liquibase.ext</groupId>
 	<artifactId>liquibase-hanadb</artifactId>
-	<version>1.1-SNAPSHOT</version>
+	<version>1.2-SNAPSHOT</version>
 
 	<name>Liquibase HANA Database Integration</name>
 	<description>Liquibase extension for SAP's HANA database</description>
@@ -27,8 +27,8 @@
 	</issueManagement>
 
 	<scm>
-		<connection>scm:git:http://github.com/liquibase/liquibase-hanadb.git</connection>
-		<url>https://github.com/liquibase/liquibase-hanadb</url>
+		<connection>scm:git:https://github.com/panthers/liquibase-hanadb.git</connection>
+		<url>https://github.com/panthers/liquibase-hanadb</url>
 	</scm>
 
 	<developers>
@@ -44,13 +44,28 @@
 			</roles>
 			<timezone>-6</timezone>
 		</developer>
+		<developer>
+           	<id>lbitonti</id>
+           	<name>Luigi Bitonti</name>
+           	<email>uknadors@yahoo.com</email>
+       </developer>
+       <developer>
+           	<id>panthers</id>
+           	<name>Jayant P Saikia</name>
+           	<email>jay.saikia@gmail.com</email>
+           	<url>https://github.com/jaysaikia</url>
+			<organizationUrl>https://github.com/panthers</organizationUrl>
+			<roles>
+				<role>developer</role>
+			</roles>
+       </developer>
 	</developers>
 
 	<dependencies>
 		<dependency>
 			<groupId>org.liquibase</groupId>
 			<artifactId>liquibase-core</artifactId>
-			<version>3.0.6</version>
+			<version>3.1.1</version>
 		</dependency>
 		<dependency>
 			<groupId>junit</groupId>

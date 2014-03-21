@@ -1,14 +1,16 @@
 package liquibase.ext.hana;
 
 
-import liquibase.database.AbstractJdbcDatabase;
-import liquibase.database.DatabaseConnection;
-import liquibase.exception.DatabaseException;
-import liquibase.structure.DatabaseObject;
-import liquibase.structure.core.Relation;
-
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+
+import liquibase.database.AbstractJdbcDatabase;
+import liquibase.database.DatabaseConnection;
+import liquibase.database.ObjectQuotingStrategy;
+import liquibase.exception.DatabaseException;
+import liquibase.structure.DatabaseObject;
+import liquibase.structure.core.View;
 
 
 public class HanaDatabase extends AbstractJdbcDatabase {
@@ -16,8 +18,15 @@ public class HanaDatabase extends AbstractJdbcDatabase {
     public static final String PRODUCT_NAME = "HDB";
     protected Set<String> systemViews = new HashSet<String>();
 
+	private static Set<String> reservedWords = new HashSet<String>();
+
     public HanaDatabase() {
         super();
+
+        super.quotingStartCharacter ="\"";
+        super.quotingEndCharacter="\"";
+        setObjectQuotingStrategy(ObjectQuotingStrategy.QUOTE_ALL_OBJECTS);
+
         systemViews.add("---");
 
         systemViews.add("AUDIT_POLICIES");
@@ -275,7 +284,7 @@ public class HanaDatabase extends AbstractJdbcDatabase {
 
     @Override
     protected String getDefaultDatabaseProductName() {
-        return "HANA DB";
+        return PRODUCT_NAME;
     }
 
     @Override
@@ -287,7 +296,6 @@ public class HanaDatabase extends AbstractJdbcDatabase {
     public Set<String> getSystemViews() {
         return systemViews;
     }
-
 
     @Override
     public String getShortName() {
@@ -311,7 +319,7 @@ public class HanaDatabase extends AbstractJdbcDatabase {
 
     @Override
     public String getDefaultDriver(String url) {
-        if (url.startsWith("jdbc:sapdb")) {
+        if (url.startsWith("jdbc:sap:")) {
             return "com.sap.db.jdbc.Driver";
         }
         return null;
@@ -326,9 +334,22 @@ public class HanaDatabase extends AbstractJdbcDatabase {
         return "CURRENT_TIMESTAMP";
     }
 
+    /**
+     * Find a better way.
+     * ngdbc.jar doesnot returns null when getCatalog is called on connection
+     */
     @Override
+	public String getDefaultCatalogName() {
+		return System.getProperty("liquibase.catalogName");
+	}
+
+    /**
+     * Find a better way.
+     * Couldn't find a way to get schema from connection. HELP !!!
+     */
+	@Override
     public String getDefaultSchemaName() {
-        return super.getDefaultSchemaName().toUpperCase();
+       	return System.getProperty("liquibase.schemaName");
     }
 
     @Override
@@ -336,9 +357,8 @@ public class HanaDatabase extends AbstractJdbcDatabase {
         if (super.isSystemObject(example)) {
             return true;
         }
-
-        if (example instanceof Relation) {
-            String schemaName = example.getSchema().getName();
+        if (example instanceof View && example.getSchema() != null) {
+        	String schemaName = example.getSchema().getName();
             if ("_SYS_SECURITY".equalsIgnoreCase(schemaName)) {
                 return true;
             } else if ("_SYS_REPO".equalsIgnoreCase(schemaName)) {
@@ -349,7 +369,6 @@ public class HanaDatabase extends AbstractJdbcDatabase {
         }
         return false;
     }
-
 
     @Override
     public boolean supportsTablespaces() {
@@ -365,4 +384,53 @@ public class HanaDatabase extends AbstractJdbcDatabase {
     public boolean supportsPrimaryKeyNames() {
         return false;
     }
+    
+    @Override
+    public boolean isReservedWord(String string) {
+        if (reservedWords.contains(string.toUpperCase())) {
+            return true;
+        }
+        return super.isReservedWord(string);
+    }
+    
+//    @Override
+//	protected String getConnectionCatalogName() throws DatabaseException {
+//		String superStr = super.getConnectionCatalogName();
+//		if(null != superStr) {
+//			return superStr;
+//		} else {
+//			return System.getProperty("liquibase.catalogName");
+//		}
+//	}
+//
+//	@Override
+//	protected String getConnectionSchemaName() {
+//		String superStr = super.getConnectionSchemaName();
+//		if(null != superStr) {
+//			return superStr;
+//		} else {
+//			return System.getProperty("liquibase.schemaName");
+//		}
+//	}
+    
+    {
+        //refer ==> https://help.sap.com/hana/html/_bsql_introduction.html#sql_introduction_sql_reserved_words
+		reservedWords.addAll(Arrays.asList("CONDITION", "ALL", "ALTER", "AS",
+				"BEFORE", "BEGIN", "BOTH", "CASE", "CHAR", "CONDITION",
+				"CONNECT", "CROSS", "CUBE", "CURRENT_CONNECTION",
+				"CURRENT_DATE", "CURRENT_SCHEMA", "CURRENT_TIME",
+				"CURRENT_TIMESTAMP", "CURRENT_USER", "CURRENT_UTCDATE",
+				"CURRENT_UTCTIME", "CURRENT_UTCTIMESTAMP", "CURRVAL", "CURSOR",
+				"DECLARE", "DISTINCT", "ELSE", "ELSEIF", "ELSIF", "END",
+				"EXCEPT", "EXCEPTION", "EXEC", "FOR", "FROM", "FULL", "GROUP",
+				"HAVING", "IF", "IN", "INNER", "INOUT", "INTERSECT", "INTO",
+				"IS", "JOIN", "LEADING", "LEFT", "LIMIT", "LOOP", "MINUS",
+				"NATURAL", "NEXTVAL", "NULL", "ON", "ORDER", "OUT", "PRIOR",
+				"RETURN", "RETURNS", "REVERSE", "RIGHT", "ROLLUP", "ROWID",
+				"SELECT", "SET", "SQL", "START", "SYSDATE", "SYSTIME",
+				"SYSTIMESTAMP", "SYSUUID", "TOP", "TRAILING", "UNION", "USING",
+				"UTCDATE", "UTCTIME", "UTCTIMESTAMP", "VALUES", "WHEN",
+				"WHERE", "WHILE", "WITH"));
+    }
+
 }
